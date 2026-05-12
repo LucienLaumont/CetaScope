@@ -14,7 +14,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.api_clients import IUCNClient
 from utils.db_connector import get_connection, get_species_names
 
@@ -24,7 +24,7 @@ _EXCLUDE = {"N/A", "NA"}
 
 
 async def main() -> None:
-    load_dotenv(Path(__file__).parent.parent / ".env")
+    load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
     iucn_token = os.environ.get("IUCN_API_KEY")
     if not iucn_token:

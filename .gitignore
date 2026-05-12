@@ -23,3 +23,5 @@ frontend/.env.local
 
 # Data (Postgis)
 data/
+preview_pacific.html
+preview_orca.html
