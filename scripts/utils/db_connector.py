@@ -9,6 +9,12 @@ async def get_connection() -> asyncpg.Connection:
         raise RuntimeError("DATABASE_URL manquante dans .env")
     return await asyncpg.connect(url)
 
+
+async def get_species_names(conn: asyncpg.Connection) -> list[str]:
+    rows = await conn.fetch("SELECT scientific_name FROM species ORDER BY scientific_name")
+    return [row["scientific_name"] for row in rows]
+
+
 async def log_sync(
     conn: asyncpg.Connection,
     *,

@@ -76,3 +76,77 @@ class WoRMSClient:
                 species.extend(sub)
 
         return species
+    
+class IUCNClient:
+    """
+    Client pour l'API IUCN Red List v4.
+    Clé API v4 : https://api.iucnredlist.org/
+    Utilise cloudscraper pour passer le bot-filtering Cloudflare.
+    """
+
+    BASE = "https://api.iucnredlist.org/api/v4"
+    DELAY_BETWEEN = 1.0
+
+    def __init__(self, token: str) -> None:
+        self._headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        self._scraper = cloudscraper.create_scraper()
+
+    def _fetch(self, genus: str, species: str) -> dict | None:
+        resp = self._scraper.get(
+            f"{self.BASE}/taxa/scientific_name",
+            headers=self._headers,
+            params={"genus_name": genus, "species_name": species},
+        )
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+
+    async def get_species(self, scientific_name: str) -> dict | None:
+        """
+        Retourne {iucn_id, iucn_status, common_name_en, global_assessments} ou None.
+        global_assessments : liste de {year, iucn_status} pour les évaluations
+        de périmètre Global (scope code "1"), toutes années confondues.
+        """
+        parts = scientific_name.split(" ", 1)
+        if len(parts) != 2:
+            return None
+        try:
+            data = await asyncio.to_thread(self._fetch, *parts)
+        except Exception:
+            return None
+        finally:
+            await asyncio.sleep(self.DELAY_BETWEEN)
+
+        if not data:
+            return None
+
+        taxon = data.get("taxon", {})
+        assessments = data.get("assessments", [])
+
+        def is_global(a: dict) -> bool:
+            return any(s.get("code") == "1" for s in a.get("scopes", []))
+
+        latest = next(
+            (a for a in assessments if a.get("latest") and is_global(a)),
+            None,
+        ) or next((a for a in assessments if a.get("latest")), None)
+
+        common_name_en = next(
+            (cn["name"] for cn in taxon.get("common_names", [])
+             if cn.get("main") and cn.get("language") == "eng"),
+            None,
+        )
+
+        global_assessments = [
+            {"year": int(a["year_published"]), "iucn_status": a["red_list_category_code"]}
+            for a in assessments
+            if is_global(a) and a.get("year_published") and a.get("red_list_category_code")
+        ]
+
+        return {
+            "iucn_id":            taxon.get("sis_id"),
+            "iucn_status":        latest.get("red_list_category_code") if latest else None,
+            "common_name_en":     common_name_en,
+            "global_assessments": global_assessments,
+        }

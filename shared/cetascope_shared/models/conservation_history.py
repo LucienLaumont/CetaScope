@@ -1,8 +1,11 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from cetascope_shared.models.species import IUCNStatus
+
+AssessmentScope = Literal["global", "regional"]
 
 
 class ConservationHistory(BaseModel):
@@ -11,6 +14,7 @@ class ConservationHistory(BaseModel):
     species_id: int
     year: int = Field(ge=1963)
     iucn_status: IUCNStatus
+    scope: AssessmentScope = "global"
 
 
 class ConservationHistoryDB(ConservationHistory):
