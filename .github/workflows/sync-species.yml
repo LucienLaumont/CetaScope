@@ -1,0 +1,45 @@
+name: Sync Species
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"  # 1er du mois à 3h UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - run: uv sync
+
+      - name: Fetch species (WoRMS)
+        run: uv run fetch_species.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Enrich IUCN
+        run: uv run enrich_iucn.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          IUCN_TOKEN: ${{ secrets.IUCN_TOKEN }}
+
+      - name: Enrich morphology
+        run: uv run enrich_morpho.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Enrich biology
+        run: uv run enrich_biology.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

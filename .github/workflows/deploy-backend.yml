@@ -1,0 +1,20 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths: [backend/**]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Koyeb
+        uses: koyeb/action-git-deploy@v1
+        with:
+          api-token: ${{ secrets.KOYEB_API_TOKEN }}
+          app-name: cetascope-api
+          service-name: api
+          docker-context: backend

@@ -1,0 +1,18 @@
+[project]
+name = "cetascope"
+version = "0.1.0"
+description = "Marine mammals dashboard — portfolio project"
+readme = "README.md"
+authors = [{ name = "lucienlaumont", email = "lucienlaumont36@gmail.com" }]
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true

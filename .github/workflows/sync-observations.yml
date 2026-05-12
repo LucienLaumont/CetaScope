@@ -1,0 +1,33 @@
+name: Sync Observations
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"  # chaque lundi à 4h UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+
+      - run: uv sync
+
+      - name: Fetch observations (OBIS + GBIF)
+        run: uv run fetch_observations.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Fetch environment (Copernicus/Open-Meteo/NASA)
+        run: uv run fetch_environment.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          COPERNICUS_KEY: ${{ secrets.COPERNICUS_KEY }}
