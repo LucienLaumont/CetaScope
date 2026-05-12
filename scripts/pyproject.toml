@@ -9,4 +9,8 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "cloudscraper>=1.2.71",
     "google-generativeai>=0.8.0",
+    "cetascope-shared",
 ]
+
+[tool.uv.sources]
+cetascope-shared = { path = "../shared" }

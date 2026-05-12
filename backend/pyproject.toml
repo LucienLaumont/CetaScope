@@ -9,4 +9,8 @@ dependencies = [
     "asyncpg>=0.30.0",
     "pydantic-settings>=2.0.0",
     "httpx>=0.27.0",
+    "cetascope-shared",
 ]
+
+[tool.uv.sources]
+cetascope-shared = { path = "../shared" }
