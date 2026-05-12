@@ -19,6 +19,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent))
+from cetascope_shared.models.conservation_history import ConservationHistory
 from utils.api_clients import IUCNClient
 from utils.db_connector import get_connection, get_species_names, log_sync
 
@@ -35,7 +36,7 @@ _LEGACY: dict[str, str] = {
     "LR/lc": "LC",
     "LR/nt": "NT",
 }
-_EXCLUDE = {"N/A", "NA", "NE"}
+_EXCLUDE = {"N/A", "NA"}
 
 def normalize_status(code: str | None) -> str | None:
     if not code:
@@ -64,14 +65,14 @@ def derive_trend(global_assessments: list[dict]) -> str:
         if normalize_status(a["iucn_status"]) in _SEVERITY
     ]
     if len(points) < 2:
-        return "Unknown"
+        return "unknown"
     points.sort()
     oldest, latest = points[0][1], points[-1][1]
     if latest < oldest:
-        return "Increasing"
+        return "increasing"
     if latest > oldest:
-        return "Decreasing"
-    return "Stable"
+        return "decreasing"
+    return "stable"
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ async def update_species(conn, name: str, data: dict | None) -> None:
         WHERE scientific_name = $1
         """,
         name,
-        normalize_status(data.get("iucn_status")) if data else None,
+        normalize_status(data.get("iucn_status")) if data else "NE",
         data.get("iucn_id") if data else None,
         data.get("common_name_en") if data else None,
         trend,
@@ -104,15 +105,22 @@ async def upsert_conservation_history(conn, species_id: int,
         status = normalize_status(a["iucn_status"])
         if status is None:
             continue
+        entry = ConservationHistory(
+            species_id=species_id,
+            year=a["year"],
+            iucn_status=status,
+            scope="global",
+        )
         await conn.execute(
             """
-            INSERT INTO conservation_history (species_id, year, iucn_status)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (species_id, year) DO UPDATE SET iucn_status = EXCLUDED.iucn_status
+            INSERT INTO conservation_history (species_id, year, iucn_status, scope)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (species_id, year, scope) DO UPDATE SET iucn_status = EXCLUDED.iucn_status
             """,
-            species_id,
-            a["year"],
-            status,
+            entry.species_id,
+            entry.year,
+            entry.iucn_status,
+            entry.scope,
         )
         inserted += 1
     return inserted
