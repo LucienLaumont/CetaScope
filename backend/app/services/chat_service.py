@@ -183,7 +183,7 @@ async def process_chat(
 
     for _ in range(6):
         response = await client.aio.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=contents,
             config=config,
         )
