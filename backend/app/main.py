@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import create_pool, get_settings
-from app.routers import analytics, map, species, zones
+from app.routers import analytics, chat, map, species, zones
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.include_router(species.router)
 app.include_router(zones.router)
 app.include_router(map.router)
 app.include_router(analytics.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

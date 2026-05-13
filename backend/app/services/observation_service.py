@@ -14,6 +14,7 @@ async def get_map_observations(
     zone_id: int | None,
     year_min: int | None,
     year_max: int | None,
+    limit: int | None = None,
 ) -> dict:
     """Retourne un GeoJSON FeatureCollection de points d'observations."""
     conditions: list[str] = []
@@ -37,6 +38,7 @@ async def get_map_observations(
 
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
+    limit_clause = f"LIMIT {limit}" if limit is not None else ""
     rows = await db.fetch(
         f"""
         SELECT
@@ -51,6 +53,7 @@ async def get_map_observations(
         FROM observations o
         JOIN species s ON s.id = o.species_id
         {where}
+        {limit_clause}
         """,
         *args,
     )

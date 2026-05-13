@@ -2,12 +2,14 @@ from functools import lru_cache
 from typing import AsyncGenerator
 
 import asyncpg
-from fastapi import Request
+from fastapi import Depends, Request
+from google import genai
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     database_url: str
+    gemini_api_key: str
     cors_origins: list[str] = ["http://localhost:5173"]
 
     model_config = {"env_file": (".env", "../.env"), "extra": "ignore"}
@@ -33,3 +35,9 @@ async def get_db(
     pool: asyncpg.Pool = request.app.state.db_pool
     async with pool.acquire() as connection:
         yield connection
+
+
+def get_gemini_client(
+    settings: Settings = Depends(get_settings),
+) -> genai.Client:
+    return genai.Client(api_key=settings.gemini_api_key)
