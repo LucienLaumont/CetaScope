@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import create_pool, get_settings
+from app.routers import analytics, map, species, zones
 
 
 @asynccontextmanager
@@ -25,6 +26,12 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+
+app.include_router(species.router)
+app.include_router(zones.router)
+app.include_router(map.router)
+app.include_router(analytics.router)
 
 
 @app.get("/health")
