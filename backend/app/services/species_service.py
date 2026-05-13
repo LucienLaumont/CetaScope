@@ -10,47 +10,71 @@ async def search_species(
     limit: int,
     offset: int,
 ) -> tuple[list[SpeciesListItem], int]:
-    where = ""
-    args: list[object] = []
+    if not q:
+        count_row = await db.fetchrow("SELECT COUNT(*) FROM species")
+        total: int = count_row["count"]
+        rows = await db.fetch(
+            """
+            SELECT
+                s.id, s.scientific_name, s.common_name_fr, s.common_name_en,
+                s.iucn_status, s.population_trend, s.habitat_type,
+                COUNT(o.id) AS observation_count
+            FROM species s
+            LEFT JOIN observations o ON o.species_id = s.id
+            GROUP BY s.id
+            ORDER BY s.scientific_name
+            LIMIT $1 OFFSET $2
+            """,
+            limit,
+            offset,
+        )
+        return [SpeciesListItem(**dict(row)) for row in rows], total
 
-    if q:
-        where = """
-            WHERE s.scientific_name ILIKE $1
-               OR s.common_name_fr  ILIKE $1
-               OR s.common_name_en  ILIKE $1
+    # Recherche floue : ILIKE (sous-chaîne) + trigramme (fautes de frappe)
+    like_q = f"%{q}%"
+    count_row = await db.fetchrow(
         """
-        args.append(f"%{q}%")
-
-    count_row = await db.fetchrow(f"SELECT COUNT(*) FROM species s {where}", *args)
-    total: int = count_row["count"]
-
-    pagination_args = args + [limit, offset]
-    limit_placeholder = f"${len(pagination_args) - 1}"
-    offset_placeholder = f"${len(pagination_args)}"
+        SELECT COUNT(*) FROM species s
+        WHERE s.scientific_name ILIKE $1
+           OR s.common_name_fr  ILIKE $1
+           OR s.common_name_en  ILIKE $1
+           OR similarity(s.scientific_name,        $2) > 0.3
+           OR similarity(COALESCE(s.common_name_fr, ''), $2) > 0.3
+           OR similarity(COALESCE(s.common_name_en, ''), $2) > 0.3
+        """,
+        like_q,
+        q,
+    )
+    total = count_row["count"]
 
     rows = await db.fetch(
-        f"""
+        """
         SELECT
-            s.id,
-            s.scientific_name,
-            s.common_name_fr,
-            s.common_name_en,
-            s.iucn_status,
-            s.population_trend,
-            s.habitat_type,
+            s.id, s.scientific_name, s.common_name_fr, s.common_name_en,
+            s.iucn_status, s.population_trend, s.habitat_type,
             COUNT(o.id) AS observation_count
         FROM species s
         LEFT JOIN observations o ON o.species_id = s.id
-        {where}
+        WHERE s.scientific_name ILIKE $1
+           OR s.common_name_fr  ILIKE $1
+           OR s.common_name_en  ILIKE $1
+           OR similarity(s.scientific_name,             $2) > 0.3
+           OR similarity(COALESCE(s.common_name_fr, ''), $2) > 0.3
+           OR similarity(COALESCE(s.common_name_en, ''), $2) > 0.3
         GROUP BY s.id
-        ORDER BY s.scientific_name
-        LIMIT {limit_placeholder} OFFSET {offset_placeholder}
+        ORDER BY GREATEST(
+            similarity(s.scientific_name,             $2),
+            similarity(COALESCE(s.common_name_fr, ''), $2),
+            similarity(COALESCE(s.common_name_en, ''), $2)
+        ) DESC
+        LIMIT $3 OFFSET $4
         """,
-        *pagination_args,
+        like_q,
+        q,
+        limit,
+        offset,
     )
-
-    items = [SpeciesListItem(**dict(row)) for row in rows]
-    return items, total
+    return [SpeciesListItem(**dict(row)) for row in rows], total
 
 
 async def get_species_by_id(

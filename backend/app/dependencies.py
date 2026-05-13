@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     database_url: str
     cors_origins: list[str] = ["http://localhost:5173"]
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": (".env", "../.env"), "extra": "ignore"}
 
 
 @lru_cache
