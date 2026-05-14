@@ -16,6 +16,7 @@ class SpeciesListItem(BaseModel):
     population_trend: PopulationTrend | None = None
     habitat_type: HabitatType | None = None
     observation_count: int = 0
+    image_url: str | None = None
 
 
 class SpeciesDetail(SpeciesDB):

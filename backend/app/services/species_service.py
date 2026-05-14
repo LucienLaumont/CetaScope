@@ -18,6 +18,7 @@ async def search_species(
             SELECT
                 s.id, s.scientific_name, s.common_name_fr, s.common_name_en,
                 s.iucn_status, s.population_trend, s.habitat_type,
+                s.image_url,
                 COUNT(o.id) AS observation_count
             FROM species s
             LEFT JOIN observations o ON o.species_id = s.id
@@ -52,6 +53,7 @@ async def search_species(
         SELECT
             s.id, s.scientific_name, s.common_name_fr, s.common_name_en,
             s.iucn_status, s.population_trend, s.habitat_type,
+            s.image_url,
             COUNT(o.id) AS observation_count
         FROM species s
         LEFT JOIN observations o ON o.species_id = s.id

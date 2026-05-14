@@ -48,3 +48,4 @@ class SpeciesDB(Species):
     id: int
     created_at: datetime
     updated_at: datetime
+    image_url: str | None = None

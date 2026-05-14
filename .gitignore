@@ -21,8 +21,11 @@ frontend/.env.local
 .vscode/
 .idea/
 
-# Data (Postgis)
+# Data (Postgis + photos d'espèces uploadées en Storage)
 data/
+!data/species_images/
+data/species_images/*
+!data/species_images/README.md
 preview_pacific.html
 preview_orca.html
 
