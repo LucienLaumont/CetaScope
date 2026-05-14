@@ -16,6 +16,7 @@ node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
+frontend/logo.png
 
 # IDE
 .vscode/

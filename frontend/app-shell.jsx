@@ -7,18 +7,10 @@
 (function () {
   const { useState, useEffect, useRef } = React;
 
-  // ---------- BrandMark — abstract cetacean silhouette ----------
+  // ---------- BrandMark — custom logo image (URL configured in config.js) ----------
   function BrandMark() {
-    return (
-      <svg className="brand-mark" viewBox="0 0 32 32" fill="none">
-        <path
-          d="M3 18 Q5 12 14 11 Q22 10 27 13 L29 10 L29 14 Q30 16 29 18 Q22 22 12 22 Q6 22 3 18 Z"
-          fill="currentColor"
-        />
-        <circle cx="24" cy="14.5" r="0.9" fill="var(--paper)" />
-        <path d="M2 24 Q12 21 16 24 Q20 27 30 24" stroke="currentColor" strokeWidth="0.9" fill="none" opacity="0.45" />
-      </svg>
-    );
+    const src = (window.CETA_CONFIG && window.CETA_CONFIG.logoUrl) || 'logo.png';
+    return <img className="brand-mark" src={src} alt="CetaScope" />;
   }
 
   // ---------- Header ----------

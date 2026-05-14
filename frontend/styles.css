@@ -148,7 +148,7 @@ body::before {
   z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark { width: 28px; height: 28px; color: var(--ink); }
+.brand-mark { width: 44px; height: 44px; object-fit: contain; display: block; }
 .brand-name { font-family: var(--serif); font-size: 19px; letter-spacing: -0.015em; }
 .brand-name .lo { color: var(--muted); }
 
