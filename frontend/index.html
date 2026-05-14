@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CetaScope — Exploration des observations de cétacés</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="chat.css">
+  <link rel="stylesheet" href="viz.css">
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel (UMD via CDN, no build step required) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Geo libs -->
+  <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
+  <!-- API config — edit window.CETA_CONFIG.apiBase to point to your backend -->
+  <script src="config.js"></script>
+
+  <!-- Data layer (real API) + chatbot connector -->
+  <script src="api.js"></script>
+  <script src="bot.js"></script>
+
+  <!-- Tweaks shell -->
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- Visualization components -->
+  <script type="text/babel" src="viz-map.jsx"></script>
+  <script type="text/babel" src="viz-timeseries.jsx"></script>
+  <script type="text/babel" src="viz-profile.jsx"></script>
+  <script type="text/babel" src="viz-others.jsx"></script>
+
+  <!-- App shell + main app -->
+  <script type="text/babel" src="app-shell.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
