@@ -156,6 +156,8 @@
       habitat: s.habitat_type || null,
       // activity
       observation_count: s.observation_count || 0,
+      // curated photo URL (Supabase Storage). null → frontend falls back to Wikipedia.
+      image_url: s.image_url || null,
     };
   }
 

@@ -198,10 +198,10 @@
     return (
       <div className="cons-wrap viz-fade-in">
         <div className="cons-head">
-          <div>
-            <div className="eyebrow">Historique IUCN</div>
-            <h1>{species?.common_name_fr}</h1>
-            <div className="scientific">{species?.scientific_name}</div>
+          <div className="cons-meta">
+            <div className="eyebrow">
+              {data.length} évaluation{data.length > 1 ? 's' : ''} · {data[0].year}–{data[data.length-1].year}
+            </div>
           </div>
           <div className="cons-current">
             <span className="now">Statut actuel · {current.year}</span>

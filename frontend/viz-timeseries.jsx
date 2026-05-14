@@ -60,13 +60,6 @@
     return (
       <div className="ts-wrap">
         <div className="ts-stats">
-          {species && (
-            <div className="ts-stat">
-              <div className="label">Espèce</div>
-              <div className="value serif">{species.common_name_fr}</div>
-              <div style={{fontStyle:'italic',color:'var(--muted)',fontSize:13,marginTop:2}}>{species.scientific_name}</div>
-            </div>
-          )}
           <div className="ts-stat">
             <div className="label">Période</div>
             <div className="value">{data[0].year}<span style={{color:'var(--muted)',fontSize:18}}> – </span>{data[data.length-1].year}</div>
@@ -122,22 +115,38 @@
                 onMouseLeave={() => setHover(null)}
               />
             ))}
-            {/* hover tooltip */}
-            {hover != null && (
-              <g style={{pointerEvents:'none'}}>
-                <line
-                  x1={x(hover)} x2={x(hover)}
-                  y1={margin.t} y2={margin.t + h}
-                  stroke="var(--ink)" strokeOpacity="0.2" strokeDasharray="2 2"
-                />
-                <g transform={`translate(${x(hover)}, ${y(data[hover].count) - 8})`}>
-                  <rect x="-30" y="-22" width="60" height="20" rx="4" fill="var(--ink)" />
-                  <text x="0" y="-8" textAnchor="middle" fill="var(--paper)" style={{fontSize:11,fontFamily:'var(--mono)'}}>
-                    {data[hover].year} · {data[hover].count}
-                  </text>
+            {/* hover tooltip — sized to content, clamped inside the chart */}
+            {hover != null && (() => {
+              const d = data[hover];
+              const label = `${d.year} · ${d.count.toLocaleString('fr-FR')}`;
+              const tipW = Math.max(72, label.length * 7.2 + 16);
+              const tipH = 22;
+              const halfW = tipW / 2;
+              const padding = 6;
+              // Vertical: sit above the bar by default; clamp to the chart top.
+              const bx = x(hover);
+              const barTop = y(d.count);
+              const tipBottom = Math.max(margin.t + tipH + 2, barTop - padding);
+              // Horizontal: clamp so the tooltip stays inside the chart area
+              const leftLimit = margin.l + halfW + 2;
+              const rightLimit = margin.l + w - halfW - 2;
+              const tx = Math.min(rightLimit, Math.max(leftLimit, bx));
+              return (
+                <g style={{pointerEvents:'none'}}>
+                  <line
+                    x1={bx} x2={bx}
+                    y1={margin.t} y2={margin.t + h}
+                    stroke="var(--ink)" strokeOpacity="0.2" strokeDasharray="2 2"
+                  />
+                  <g transform={`translate(${tx}, ${tipBottom})`}>
+                    <rect x={-halfW} y={-tipH} width={tipW} height={tipH} rx="4" fill="var(--ink)" />
+                    <text x="0" y={-tipH/2 + 4} textAnchor="middle" fill="var(--paper)" style={{fontSize:11,fontFamily:'var(--mono)'}}>
+                      {label}
+                    </text>
+                  </g>
                 </g>
-              </g>
-            )}
+              );
+            })()}
           </svg>
         </div>
       </div>

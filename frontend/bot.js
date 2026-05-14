@@ -106,6 +106,34 @@
     return [w, s, e, n];
   }
 
+  // Strip accents + lowercase for fuzzy text matching
+  function fold(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  // Find the species in the cache whose name (fr / en / scientific) best matches
+  // some snippet of free text. Used to attach _species to time_series /
+  // conservation responses, since the backend doesn't echo species info there.
+  function resolveSpeciesFromText(text) {
+    const dir = window.CETA && window.CETA._speciesDir;
+    if (!dir || !text) return null;
+    const folded = fold(text);
+    let best = null;
+    let bestLen = 0;
+    for (const sp of dir.values()) {
+      const candidates = [sp.common_name_fr, sp.common_name_en, sp.scientific_name].filter(Boolean);
+      for (const c of candidates) {
+        const fc = fold(c);
+        // Require a reasonable-length match to avoid false hits on short tokens
+        if (fc.length >= 4 && folded.includes(fc) && fc.length > bestLen) {
+          best = sp;
+          bestLen = fc.length;
+        }
+      }
+    }
+    return best;
+  }
+
   async function resolve(query) {
     let resp;
     try {
@@ -128,7 +156,18 @@
         message: `Impossible de joindre l'API : ${err.message}. Vérifie que le backend tourne et que ${API_BASE} est joignable.`,
       };
     }
-    return enrich(resp || { type: 'text', message: '' });
+    const enriched = enrich(resp || { type: 'text', message: '' });
+    // For types whose payload lacks species info, try to recover the species
+    // from the user query (preferred) or the bot's natural-language message.
+    if (!enriched._species &&
+        (enriched.type === 'time_series' ||
+         enriched.type === 'conservation' ||
+         enriched.type === 'map')) {
+      enriched._species =
+        resolveSpeciesFromText(query) ||
+        resolveSpeciesFromText(enriched.message);
+    }
+    return enriched;
   }
 
   const defaultSuggestions = [

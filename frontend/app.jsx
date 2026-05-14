@@ -289,10 +289,12 @@
         sub = _zone?.name_fr || data?.name_fr;
         break;
       case 'time_series':
-        title = 'Évolution annuelle';
+        title = _species
+          ? `Évolution annuelle — ${_species.common_name_fr}`
+          : 'Évolution annuelle';
         sub = data && data.length
-          ? `${data[0].year} – ${data[data.length-1].year}`
-          : '';
+          ? `${data[0].year} – ${data[data.length-1].year}${_species ? ` · ${_species.scientific_name}` : ''}`
+          : (_species?.scientific_name || '');
         break;
       case 'profile':
         title = "Fiche d'espèce";
@@ -303,8 +305,10 @@
         sub = _zone ? _zone.name_fr : 'Mondial';
         break;
       case 'conservation':
-        title = 'Historique de conservation IUCN';
-        sub = _species?.common_name_fr;
+        title = _species
+          ? `Historique IUCN — ${_species.common_name_fr}`
+          : 'Historique de conservation IUCN';
+        sub = _species?.scientific_name || '';
         break;
       default:
         title = 'Réponse'; sub = '';

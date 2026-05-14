@@ -47,9 +47,33 @@
     );
   }
 
+  // Strip accents + lowercase — used by the home search bar to match species
+  // names regardless of diacritics.
+  function fold(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
   // ---------- Home (default state: species index by group) ----------
   function Home({ species, loading, error, totals, onAskSpecies, onAskSuggestion, zonesCount }) {
     const groups = window.CETA.groups;
+    const [search, setSearch] = useState('');
+    const [expanded, setExpanded] = useState(() => new Set());
+    const searchRef = useRef(null);
+
+    function toggleGroup(id) {
+      setExpanded(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    }
+    function expandAll() {
+      setExpanded(new Set(groups.map(g => g.id)));
+    }
+    function collapseAll() {
+      setExpanded(new Set());
+    }
 
     if (loading) {
       return (
@@ -121,45 +145,170 @@
           </div>
         </div>
 
-        <div className="home-divider">
-          <div className="home-section-eyebrow">Index des espèces · Cliquer pour ouvrir une fiche</div>
+        <div className="home-search-block">
+          <div className="home-search-input-wrap">
+            <svg className="home-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="7" cy="7" r="4.5" />
+              <line x1="10.5" y1="10.5" x2="14" y2="14" strokeLinecap="round" />
+            </svg>
+            <input
+              ref={searchRef}
+              type="text"
+              className="home-search-input"
+              placeholder="Rechercher une espèce — orque, baleine bleue, narval…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setSearch(''); }}
+            />
+            {search && (
+              <button
+                type="button"
+                className="home-search-clear"
+                onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+                title="Effacer (Esc)"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M4 4 L12 12 M12 4 L4 12" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
-        {groups.map(g => {
-          const list = species.filter(sp => sp.group === g.id);
-          if (!list.length) return null;
-          // Sort by observation count desc within a group
-          const sorted = [...list].sort((a, b) => (b.observation_count || 0) - (a.observation_count || 0));
-          return (
-            <section className="home-group" key={g.id}>
-              <header className="home-group-head">
-                <div className="home-group-label">
-                  <h2>{g.label}</h2>
-                  <div className="home-group-taxon">{g.taxon} · {list.length} espèce{list.length>1?'s':''}</div>
-                </div>
-                <p className="home-group-blurb">{g.blurb}</p>
-              </header>
-              <div className="home-group-grid">
-                {sorted.map(sp => (
-                  <SpeciesCard key={sp.id} sp={sp} onClick={() => onAskSpecies(sp)} />
-                ))}
+        <div className="home-index-bar">
+          <div className="home-section-eyebrow">
+            Index des espèces · {species.length} au total
+          </div>
+          <div className="home-index-actions">
+            <button type="button" className="home-link-btn" onClick={expandAll}>Tout déplier</button>
+            <span className="home-link-sep">·</span>
+            <button type="button" className="home-link-btn" onClick={collapseAll}>Tout replier</button>
+          </div>
+        </div>
+
+        {(() => {
+          const q = fold(search.trim());
+          const isSearching = q.length > 0;
+          const matchSpecies = sp => {
+            if (!isSearching) return true;
+            return [sp.common_name_fr, sp.common_name_en, sp.scientific_name]
+              .filter(Boolean)
+              .some(f => fold(f).includes(q));
+          };
+          const groupedRows = groups.map(g => {
+            const all = species.filter(sp => sp.group === g.id);
+            const matched = all.filter(matchSpecies);
+            return { ...g, all, matched };
+          });
+          const totalMatched = groupedRows.reduce((s, g) => s + g.matched.length, 0);
+
+          if (isSearching && totalMatched === 0) {
+            return (
+              <div className="home-no-results">
+                <h3 className="serif">Aucune espèce ne correspond à « {search} »</h3>
+                <p>Essaie un autre nom — français, anglais ou scientifique.</p>
               </div>
-            </section>
+            );
+          }
+
+          return (
+            <>
+              {groupedRows.map(g => {
+                if (!g.all.length) return null;
+                if (isSearching && g.matched.length === 0) return null;
+                const open = isSearching ? true : expanded.has(g.id);
+                const sorted = [...g.matched].sort(
+                  (a, b) => (b.observation_count || 0) - (a.observation_count || 0)
+                );
+                return (
+                  <section className={`home-group${open ? ' open' : ''}`} key={g.id}>
+                    <button
+                      type="button"
+                      className="home-group-head home-group-head-btn"
+                      onClick={() => toggleGroup(g.id)}
+                      aria-expanded={open}
+                      disabled={isSearching}
+                    >
+                      <div className="home-group-label">
+                        <h2>{g.label}</h2>
+                        <div className="home-group-taxon">
+                          {g.taxon} ·{' '}
+                          {isSearching
+                            ? `${g.matched.length} / ${g.all.length} affichée${g.matched.length>1?'s':''}`
+                            : `${g.all.length} espèce${g.all.length>1?'s':''}`}
+                        </div>
+                      </div>
+                      <p className="home-group-blurb">{g.blurb}</p>
+                      <span className="home-group-chevron" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M4 6 L8 10 L12 6" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="home-group-grid">
+                        {sorted.map(sp => (
+                          <SpeciesCard key={sp.id} sp={sp} onClick={() => onAskSpecies(sp)} />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </>
           );
-        })}
+        })()}
 
         <div style={{ height: 48 }} />
       </div>
     );
   }
 
+  // Hook: resolve a species photo. Priority:
+  //   1. Curated DB url (sp.image_url) — Supabase Storage, set via upload script
+  //   2. Wikipedia thumbnail (cached in localStorage)
+  //   3. null → caller keeps the SVG silhouette fallback
+  function useSpeciesImage(sp) {
+    const dbUrl = sp?.image_url || null;
+    const wikiPeek = !dbUrl && window.CetaImages
+      ? window.CetaImages.peek(sp?.scientific_name)
+      : undefined;
+    const initial = dbUrl || (typeof wikiPeek === 'string' ? wikiPeek : null);
+    const [url, setUrl] = useState(initial);
+    const [loaded, setLoaded] = useState(false);
+    useEffect(() => {
+      // Reset loaded state when the species (and hence URL) changes
+      setLoaded(false);
+      if (dbUrl) { setUrl(dbUrl); return; }
+      if (!sp || !sp.scientific_name || !window.CetaImages) { setUrl(null); return; }
+      let cancelled = false;
+      window.CetaImages.get(sp.scientific_name, sp.common_name_fr).then(u => {
+        if (cancelled) return;
+        setUrl(typeof u === 'string' ? u : null);
+      });
+      return () => { cancelled = true; };
+    }, [sp?.scientific_name, sp?.common_name_fr, dbUrl]);
+    return { url, loaded, onLoaded: () => setLoaded(true) };
+  }
+
   function SpeciesCard({ sp, onClick }) {
+    const { url, loaded, onLoaded } = useSpeciesImage(sp);
     return (
       <div className="species-card" onClick={onClick}>
         <div className="species-card-illus">
           <svg viewBox="0 0 100 40" preserveAspectRatio="xMidYMid meet">
             <path className="silhouette" d={window.CETA.silhouette(sp.kind)} />
           </svg>
+          {url && (
+            <img
+              className={`species-card-photo${loaded ? ' loaded' : ''}`}
+              src={url}
+              alt={sp.common_name_fr}
+              loading="lazy"
+              onLoad={onLoaded}
+              onError={() => { /* keep silhouette */ }}
+            />
+          )}
         </div>
         <div className="species-card-body">
           <div className="species-card-fr">{sp.common_name_fr}</div>
@@ -359,7 +508,7 @@
             <textarea
               ref={taRef}
               rows="1"
-              placeholder="Ex. observations d'orques dans l'Atlantique entre 2010 et 2020…"
+              placeholder="Ex. Fiche de l'espèce Cachalot"
               value={input}
               onChange={autoGrow}
               onKeyDown={onKey}
@@ -378,4 +527,5 @@
   window.Header = Header;
   window.Home = Home;
   window.ChatPanel = ChatPanel;
+  window.useSpeciesImage = useSpeciesImage;
 })();

@@ -44,6 +44,7 @@
     const sp = data;
     const sil = window.CETA.silhouette(sp.kind);
     const habitatLabel = sp.habitat ? (HABITAT_LABELS[sp.habitat] || sp.habitat) : null;
+    const photo = window.useSpeciesImage ? window.useSpeciesImage(sp) : { url: null, loaded: false, onLoaded: () => {} };
 
     return (
       <div className="profile-wrap viz-fade-in">
@@ -52,6 +53,15 @@
             <svg viewBox="0 0 100 40" preserveAspectRatio="xMidYMid meet">
               <path className="silhouette" d={sil} />
             </svg>
+            {photo.url && (
+              <img
+                className={`profile-portrait-photo${photo.loaded ? ' loaded' : ''}`}
+                src={photo.url}
+                alt={sp.common_name_fr}
+                loading="lazy"
+                onLoad={photo.onLoaded}
+              />
+            )}
           </div>
           <div>
             <h1 className="profile-title">{sp.common_name_fr}</h1>
