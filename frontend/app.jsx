@@ -26,22 +26,44 @@
 
     useEffect(() => {
       let cancelled = false;
-      Promise.all([
-        window.CETA.api.loadSpecies(100),
-        window.CETA.api.loadZones(),
-      ]).then(([sp, zn]) => {
+      const apiH = window.CETA.api;
+
+      const applyData = (sp, zn) => {
         if (cancelled) return;
         setSpecies(sp);
         setZones(zn);
-        // Cache species dir for bot.js enrichments (top_species)
+        // Refresh species directory used by bot.js for top_species enrichment
         window.CETA._speciesDir = new Map(sp.map(s => [s.id, s]));
+      };
+
+      // 1. Hydrate instantly from localStorage if both caches are present
+      const cachedSp = apiH.readCache('species');
+      const cachedZn = apiH.readCache('zones');
+      const hasCache = cachedSp && cachedZn && Array.isArray(cachedSp.data) && Array.isArray(cachedZn.data);
+      if (hasCache) {
+        applyData(cachedSp.data, cachedZn.data);
         setBootLoading(false);
-      }).catch(err => {
-        if (cancelled) return;
-        console.error('CetaScope boot failed', err);
-        setBootError(err.message || String(err));
-        setBootLoading(false);
-      });
+      }
+
+      // 2. Always revalidate in the background — keep cached data on error
+      Promise.all([apiH.loadSpecies(100), apiH.loadZones()])
+        .then(([sp, zn]) => {
+          if (cancelled) return;
+          applyData(sp, zn);
+          apiH.writeCache('species', sp);
+          apiH.writeCache('zones', zn);
+          setBootLoading(false);
+          setBootError(null);
+        })
+        .catch(err => {
+          if (cancelled) return;
+          console.error('CetaScope boot revalidate failed', err);
+          // If we have a stale cache, silently keep showing it.
+          if (!hasCache) {
+            setBootError(err.message || String(err));
+            setBootLoading(false);
+          }
+        });
       return () => { cancelled = true; };
     }, []);
 

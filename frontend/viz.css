@@ -247,7 +247,7 @@
 .species-card {
   border: 1px solid var(--rule);
   border-radius: var(--r-lg);
-  background: var(--card);
+  background: var(--abyss);
   display: flex; flex-direction: column;
   overflow: hidden;
   cursor: pointer;
@@ -262,7 +262,7 @@
 }
 .species-card-illus {
   flex: 1;
-  background: linear-gradient(180deg, var(--paper-3) 0%, var(--mist) 100%);
+  background: linear-gradient(180deg, var(--deep) 0%, var(--abyss) 100%);
   display: flex; align-items: center; justify-content: center;
   position: relative;
   overflow: hidden;
@@ -282,7 +282,11 @@
   pointer-events: none;
 }
 .species-card-photo.loaded { opacity: 1; }
-.species-card-body { padding: 16px 18px 18px; }
+.species-card-body {
+  padding: 16px 18px 18px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule-2);
+}
 .species-card-fr {
   font-family: var(--serif);
   font-size: 22px;
@@ -445,7 +449,7 @@
   position: relative;
   aspect-ratio: 1;
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--paper-3) 0%, var(--mist) 100%);
+  background: linear-gradient(180deg, var(--deep) 0%, var(--abyss) 100%);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   border: 1px solid var(--rule);

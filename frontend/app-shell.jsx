@@ -375,6 +375,48 @@
     text:'Réponse'
   };
 
+  // ---------- Typing indicator (rotating thematic phrases) ----------
+  const TYPING_PHRASES = [
+    'Plongée dans la base…',
+    'Triangulation au sonar…',
+    'Analyse du souffle…',
+    'Mesure de la nageoire caudale…',
+    'Décodage des chants…',
+    'Identification de l’espèce…',
+    'Repérage des bancs…',
+    'Comptage des individus…',
+    'Lecture du registre IUCN…',
+    'Croisement avec OBIS…',
+    'Consultation de WoRMS…',
+    'Échantillonnage acoustique…',
+    'Cartographie des routes migratoires…',
+    'Récupération des observations…',
+    'Suivi par satellite…',
+  ];
+
+  function TypingIndicator() {
+    const [idx, setIdx] = useState(() => Math.floor(Math.random() * TYPING_PHRASES.length));
+    useEffect(() => {
+      let timeoutId;
+      // Returns a fresh random delay between 2s and 4s, recomputed on every tick
+      const randomDelay = () => 2000 + Math.random() * 2000;
+      const tick = () => {
+        setIdx(prev => (prev + 1) % TYPING_PHRASES.length);
+        timeoutId = setTimeout(tick, randomDelay());
+      };
+      timeoutId = setTimeout(tick, randomDelay());
+      return () => clearTimeout(timeoutId);
+    }, []);
+    return (
+      <>
+        <span key={idx} className="bot-typing-text">{TYPING_PHRASES[idx]}</span>
+        <span className="loading-dot"></span>
+        <span className="loading-dot"></span>
+        <span className="loading-dot"></span>
+      </>
+    );
+  }
+
   // Render bot text with **bold** support
   function FormattedText({ text }) {
     if (!text) return null;
@@ -488,9 +530,7 @@
             <div className="bubble bot">
               <div className="bubble-meta">CetaScope</div>
               <div className="bubble-body bot-typing">
-                <span className="loading-dot"></span>
-                <span className="loading-dot"></span>
-                <span className="loading-dot"></span>
+                <TypingIndicator />
               </div>
             </div>
           )}

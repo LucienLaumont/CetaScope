@@ -222,6 +222,36 @@
     }
   ];
 
+  // ---------- localStorage cache (stale-while-revalidate) ----------
+  // The home grid + zones list only change at the monthly OBIS sync, so we
+  // can show the cached snapshot instantly on every reload and refresh in
+  // the background. TTL is mostly informational here.
+  const CACHE_VERSION = 'v1';
+  const CACHE_TTL_MS = 24 * 3600 * 1000;
+
+  function cacheKey(name) {
+    return `cetascope.cache.${name}.${CACHE_VERSION}`;
+  }
+  function readCache(name) {
+    try {
+      const raw = localStorage.getItem(cacheKey(name));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.ts !== 'number') return null;
+      return { data: parsed.data, age: Date.now() - parsed.ts };
+    } catch { return null; }
+  }
+  function writeCache(name, data) {
+    try {
+      localStorage.setItem(cacheKey(name), JSON.stringify({ ts: Date.now(), data }));
+    } catch { /* quota / private mode — silently ignore */ }
+  }
+  function clearCache() {
+    for (const k of ['species', 'zones']) {
+      try { localStorage.removeItem(cacheKey(k)); } catch {}
+    }
+  }
+
   // ---------- Public surface ----------
   window.CETA = {
     // sync helpers used directly inside React render
@@ -233,6 +263,7 @@
     api: {
       loadSpecies, loadSpeciesDetail, loadZones, loadIUCNDistribution,
       base: API,
+      readCache, writeCache, clearCache, CACHE_TTL_MS,
     },
   };
 })();

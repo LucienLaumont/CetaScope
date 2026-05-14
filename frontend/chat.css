@@ -148,4 +148,21 @@
 .suggestion-chip:hover { background: var(--paper-3); border-color: var(--ink-2); color: var(--ink); }
 
 /* Bot typing indicator */
-.bot-typing { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.bot-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.bot-typing-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+  animation: typingFadeIn 320ms ease both;
+}
+@keyframes typingFadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
