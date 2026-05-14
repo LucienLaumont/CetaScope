@@ -25,3 +25,6 @@ frontend/.env.local
 data/
 preview_pacific.html
 preview_orca.html
+
+# Claude
+.claude
