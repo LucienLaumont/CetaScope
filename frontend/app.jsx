@@ -265,7 +265,7 @@ function App() {
           apiOnline={!bootError}
         />
 
-        <div className={`workspace${chatOpen ? '' : ' chat-collapsed'}`}>
+        <div className={`workspace${chatOpen ? '' : ' chat-collapsed'}`} style={{overflow:'hidden'}}>
           <div className="viz-pane">
             {navBar}
             {vizPaneContent}
@@ -282,6 +282,31 @@ function App() {
             onToggle={() => setChatOpen(v => !v)}
           />
         </div>
+        <footer className="app-footer">
+          <div className="app-footer-sources">
+            <span>Sources de données</span>
+            <span className="app-footer-dot"/>
+            <span>
+              <a href="https://obis.org" target="_blank" rel="noopener noreferrer">OBIS</a>
+              &nbsp;· Observations marines mondiales
+            </span>
+            <span className="app-footer-dot"/>
+            <span>
+              <a href="https://www.iucnredlist.org" target="_blank" rel="noopener noreferrer">IUCN Red List</a>
+              &nbsp;· Statuts de conservation
+            </span>
+            <span className="app-footer-dot"/>
+            <span>
+              <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer">Wikipedia</a>
+              &nbsp;· Photos des espèces
+            </span>
+          </div>
+          <div className="app-footer-right">
+            <a href="mailto:lucienlaumont36@gmail.com">lucienlaumont36@gmail.com</a>
+            <span className="app-footer-dot"/>
+            <span>© {new Date().getFullYear()} CetaScope</span>
+          </div>
+        </footer>
       </div>
     );
   }

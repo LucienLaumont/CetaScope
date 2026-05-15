@@ -135,9 +135,40 @@ body::before {
 .app {
   position: relative; z-index: 1;
   display: grid;
-  grid-template-rows: 56px 1fr;
+  grid-template-rows: 56px 1fr 34px;
   height: 100vh;
 }
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-2);
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  gap: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.app-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.app-footer a:hover { color: var(--ink); }
+.app-footer-sources { display: flex; align-items: center; gap: 14px; }
+.app-footer-sources span { display: flex; align-items: center; gap: 5px; }
+.app-footer-dot {
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--rule);
+  flex-shrink: 0;
+}
+.app-footer-right { display: flex; align-items: center; gap: 16px; }
 
 .header {
   display: flex; align-items: center; justify-content: space-between;
