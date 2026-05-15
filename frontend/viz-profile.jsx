@@ -6,6 +6,8 @@
 // section is null-guarded.
 
 (function () {
+  const { useState } = React;
+
   const IUCN_LABELS = {
     EX: 'Éteint', EW: "Éteint à l'état sauvage", CR: 'En danger critique',
     EN: 'En danger', VU: 'Vulnérable', NT: 'Quasi menacé',
@@ -39,12 +41,24 @@
     return `${toUnit(minKg)} – ${toUnit(maxKg)}`;
   }
 
-  function ProfileViz({ data }) {
+  function ProfileViz({ data, onNavigate }) {
     if (!data) return null;
     const sp = data;
     const sil = window.CETA.silhouette(sp.kind);
     const habitatLabel = sp.habitat ? (HABITAT_LABELS[sp.habitat] || sp.habitat) : null;
     const photo = window.useSpeciesImage ? window.useSpeciesImage(sp) : { url: null, loaded: false, onLoaded: () => {} };
+    const [loading, setLoading] = useState(null);
+
+    async function goTo(type, fetcher) {
+      if (!onNavigate || loading) return;
+      setLoading(type);
+      try {
+        const data = await fetcher();
+        onNavigate({ type, data, _species: sp });
+      } finally {
+        setLoading(null);
+      }
+    }
 
     return (
       <div className="profile-wrap viz-fade-in">
@@ -83,6 +97,45 @@
             </div>
           </div>
         </div>
+
+        {onNavigate && (
+          <div className="profile-actions">
+            <button
+              className="profile-action-btn"
+              disabled={!!loading}
+              onClick={() => goTo('map', () => window.CETA.api.loadMapObservations(sp.id))}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                <circle cx="12" cy="9" r="2.5"/>
+              </svg>
+              <span>{loading === 'map' ? 'Chargement…' : 'Observations'}</span>
+            </button>
+            <button
+              className="profile-action-btn"
+              disabled={!!loading}
+              onClick={() => goTo('time_series', () => window.CETA.api.loadTimeSeries(sp.id))}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="12" width="4" height="9" rx="1"/>
+                <rect x="10" y="7" width="4" height="14" rx="1"/>
+                <rect x="17" y="3" width="4" height="18" rx="1"/>
+              </svg>
+              <span>{loading === 'time_series' ? 'Chargement…' : 'Évolution'}</span>
+            </button>
+            <button
+              className="profile-action-btn"
+              disabled={!!loading}
+              onClick={() => goTo('conservation', () => window.CETA.api.loadConservationHistory(sp.id))}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L3 7v5c0 5.25 3.8 10.15 9 11.35C17.2 22.15 21 17.25 21 12V7L12 2z"/>
+                <polyline points="9 12 11 14 15 10"/>
+              </svg>
+              <span>{loading === 'conservation' ? 'Chargement…' : 'Historique IUCN'}</span>
+            </button>
+          </div>
+        )}
 
         <div style={{ marginTop: 24 }}>
           <div className="iucn-bar">

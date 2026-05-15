@@ -160,6 +160,10 @@ body::before {
   grid-template-columns: 1fr 380px;
   gap: 0;
   overflow: hidden;
+  transition: grid-template-columns 0.22s ease;
+}
+.workspace.chat-collapsed {
+  grid-template-columns: 1fr 40px;
 }
 
 .viz-pane {
@@ -179,6 +183,14 @@ body::before {
   display: flex; flex-direction: column;
   background: var(--paper-2);
   overflow: hidden;
+}
+.chat-panel--collapsed {
+  align-items: center;
+  padding-top: 12px;
+  border-left: 1px solid var(--rule);
+}
+.chat-reopen-btn {
+  width: 32px; height: 32px;
 }
 
 /* Viz header */

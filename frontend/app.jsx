@@ -15,7 +15,7 @@
     "mapStyle": "minimal"
   }/*EDITMODE-END*/;
 
-  function App() {
+function App() {
     const [tweaks] = useTweaks(TWEAK_DEFAULTS);
 
     // ----- Async bootstrap: species + zones -----
@@ -68,10 +68,29 @@
     }, []);
 
     // ----- Chat state -----
+    const [chatOpen, setChatOpen] = useState(true);
     const [history, setHistory] = useState([]);
     const [activeMsgId, setActiveMsgId] = useState(null);
     const [activeViz, setActiveViz] = useState(null);
     const [isTyping, setIsTyping] = useState(false);
+
+    const showViz = useCallback((viz, msgId = null) => {
+      setActiveViz(viz);
+      setActiveMsgId(msgId);
+      window.history.pushState({ viz, msgId }, '', window.location.pathname);
+    }, []);
+
+    // Restore viz state on browser back/forward
+    useEffect(() => {
+      window.history.replaceState({ viz: null, msgId: null }, '', window.location.href);
+      function onPopState(e) {
+        const s = e.state;
+        setActiveViz(s?.viz ?? null);
+        setActiveMsgId(s?.msgId ?? null);
+      }
+      window.addEventListener('popstate', onPopState);
+      return () => window.removeEventListener('popstate', onPopState);
+    }, []);
 
     const totals = useMemo(() => ({
       observations: species.reduce((s, sp) => s + (sp.observation_count || 0), 0),
@@ -118,8 +137,7 @@
       }]);
 
       if (resp.type !== 'text') {
-        setActiveViz(resp);
-        setActiveMsgId(botId);
+        showViz(resp, botId);
       }
       setIsTyping(false);
     }, []);
@@ -127,12 +145,14 @@
     const onSelectMessage = useCallback((msgId) => {
       const msg = history.find(m => m.id === msgId);
       if (!msg || !msg._full || msg._full.type === 'text') return;
-      setActiveViz(msg._full);
-      setActiveMsgId(msgId);
-    }, [history]);
+      showViz(msg._full, msgId);
+    }, [history, showViz]);
 
     const onClear = useCallback(() => {
-      setHistory([]); setActiveViz(null); setActiveMsgId(null);
+      setHistory([]);
+      setActiveViz(null);
+      setActiveMsgId(null);
+      window.history.replaceState({ viz: null, msgId: null }, '', window.location.pathname);
     }, []);
 
     const onReset = onClear;
@@ -152,23 +172,39 @@
     const onPrev = useCallback(() => {
       if (activeIndex > 0) {
         const m = vizMessages[activeIndex - 1];
-        setActiveViz(m._full); setActiveMsgId(m.id);
+        showViz(m._full, m.id);
       } else if (activeIndex === -1 && vizMessages.length > 0) {
         const m = vizMessages[vizMessages.length - 1];
-        setActiveViz(m._full); setActiveMsgId(m.id);
+        showViz(m._full, m.id);
       }
-    }, [activeIndex, vizMessages]);
+    }, [activeIndex, vizMessages, showViz]);
 
     const onNext = useCallback(() => {
       if (activeIndex >= 0 && activeIndex < vizMessages.length - 1) {
         const m = vizMessages[activeIndex + 1];
-        setActiveViz(m._full); setActiveMsgId(m.id);
+        showViz(m._full, m.id);
       }
-    }, [activeIndex, vizMessages]);
+    }, [activeIndex, vizMessages, showViz]);
 
     const onGoHome = useCallback(() => {
-      setActiveViz(null); setActiveMsgId(null);
-    }, []);
+      showViz(null);
+    }, [showViz]);
+
+    const onNavigate = useCallback((viz) => {
+      const sp = viz._species;
+      const titleMap = {
+        map:          sp ? `Observations ${window.CETA.withDeForPlural(sp)}` : 'Observations',
+        time_series:  sp ? `Évolution — ${sp.common_name_fr}` : 'Évolution',
+        conservation: sp ? `IUCN — ${sp.common_name_fr}` : 'Historique IUCN',
+      };
+      const id = Date.now();
+      setHistory(h => [...h, {
+        id, role: 'bot', text: '', direct: true,
+        viz: { type: viz.type, title: titleMap[viz.type] || viz.type },
+        _full: viz,
+      }]);
+      showViz(viz, id);
+    }, [showViz]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -184,12 +220,20 @@
     }, [onPrev, onNext, onGoHome, canGoPrev, canGoNext, activeViz]);
 
     // Ask for a species' profile from the home grid
-    const onAskSpecies = useCallback((sp) => {
-      send(`Profil ${window.CETA.withDeArticle(sp)}`);
-    }, [send]);
+    const onAskSpecies = useCallback(async (sp) => {
+      const data = await window.CETA.api.loadSpeciesDetail(sp.id);
+      const viz = { type: 'profile', data };
+      const id = Date.now();
+      setHistory(h => [...h, {
+        id, role: 'bot', text: '', direct: true,
+        viz: { type: 'profile', title: `Fiche — ${data.common_name_fr || data.scientific_name}` },
+        _full: viz,
+      }]);
+      showViz(viz, id);
+    }, [showViz]);
 
     const vizPaneContent = activeViz
-      ? <VizPane viz={activeViz} mapStyle={tweaks.mapStyle} />
+      ? <VizPane viz={activeViz} mapStyle={tweaks.mapStyle} onNavigate={onNavigate} />
       : <window.Home
           species={species}
           loading={bootLoading}
@@ -221,19 +265,21 @@
           apiOnline={!bootError}
         />
 
-        <div className="workspace">
+        <div className={`workspace${chatOpen ? '' : ' chat-collapsed'}`}>
           <div className="viz-pane">
             {navBar}
             {vizPaneContent}
           </div>
           <window.ChatPanel
-            history={history}
+            history={history.filter(m => !m.direct)}
             onSend={send}
             suggestions={suggestions}
             isTyping={isTyping}
             activeMsgId={activeMsgId}
             onSelectMessage={onSelectMessage}
             onClear={onClear}
+            open={chatOpen}
+            onToggle={() => setChatOpen(v => !v)}
           />
         </div>
       </div>
@@ -294,7 +340,7 @@
   }
 
   // ----- Viz pane: header + body -----
-  function VizPane({ viz, mapStyle }) {
+  function VizPane({ viz, mapStyle, onNavigate }) {
     const { type, data, _species, _zone, _years } = viz;
 
     let title, sub, chips = [];
@@ -353,7 +399,7 @@
           {type === 'map'         && <window.MapViz data={data} style={mapStyle} />}
           {type === 'choropleth'  && <window.ChoroplethViz data={data} style={mapStyle} />}
           {type === 'time_series' && <window.TimeSeriesViz data={data} species={_species} />}
-          {type === 'profile'     && <window.ProfileViz data={data} />}
+          {type === 'profile'     && <window.ProfileViz data={data} onNavigate={onNavigate} />}
           {type === 'top_species' && <window.TopSpeciesViz data={data} zone={_zone} />}
           {type === 'conservation'&& <window.ConservationViz data={data} species={_species} />}
           {type === 'text'        && <window.TextViz message={viz.message} />}

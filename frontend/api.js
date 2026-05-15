@@ -193,6 +193,15 @@
   async function loadIUCNDistribution() {
     return fetchJSON('/analytics/conservation-status');
   }
+  async function loadMapObservations(speciesId) {
+    return fetchJSON(`/map/observations?species_id=${speciesId}`);
+  }
+  async function loadTimeSeries(speciesId) {
+    return fetchJSON(`/analytics/time-series/${speciesId}`);
+  }
+  async function loadConservationHistory(speciesId) {
+    return fetchJSON(`/species/${speciesId}/conservation-history`);
+  }
 
   // ---------- Groups (used by Home) ----------
   const groups = [
@@ -262,6 +271,7 @@
     // async loaders — used on mount
     api: {
       loadSpecies, loadSpeciesDetail, loadZones, loadIUCNDistribution,
+      loadMapObservations, loadTimeSeries, loadConservationHistory,
       base: API,
       readCache, writeCache, clearCache, CACHE_TTL_MS,
     },

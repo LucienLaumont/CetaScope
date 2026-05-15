@@ -422,7 +422,8 @@
 
   function ChatPanel({
     history, onSend, suggestions, isTyping,
-    activeMsgId, onSelectMessage, onClear
+    activeMsgId, onSelectMessage, onClear,
+    open = true, onToggle
   }) {
     const [input, setInput] = useState('');
     const taRef = useRef(null);
@@ -455,6 +456,18 @@
       setInput(e.target.value);
     }
 
+    if (!open) {
+      return (
+        <div className="chat-panel chat-panel--collapsed">
+          <button className="icon-btn chat-reopen-btn" onClick={onToggle} title="Ouvrir le chat">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 3 L5 8 L10 13"/>
+            </svg>
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="chat-panel">
         <div className="chat-head">
@@ -471,6 +484,11 @@
                 </svg>
               </button>
             )}
+            <button className="icon-btn" onClick={onToggle} title="Fermer le chat">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 3 L11 8 L6 13"/>
+              </svg>
+            </button>
           </div>
         </div>
 
