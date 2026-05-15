@@ -79,8 +79,10 @@
     if (inflight.has(scientificName)) return inflight.get(scientificName);
     const p = resolve(scientificName, commonNameFr)
       .then(url => {
-        c[scientificName] = url; // either a string URL or null
-        persist();
+        if (typeof url === 'string') {
+          c[scientificName] = url;
+          persist();
+        }
         inflight.delete(scientificName);
         return url;
       })
@@ -96,6 +98,16 @@
     memCache = {};
     try { localStorage.removeItem(CACHE_KEY); } catch {}
   }
+
+  // Purge null entries left by previous bug (network errors cached as null)
+  (function purgeStalseNulls() {
+    const c = readCache();
+    const nullKeys = Object.keys(c).filter(k => c[k] === null);
+    if (nullKeys.length === 0) return;
+    nullKeys.forEach(k => delete c[k]);
+    memCache = c;
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {}
+  })();
 
   window.CetaImages = { get, peek, clear };
 })();
