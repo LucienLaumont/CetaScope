@@ -26,9 +26,6 @@ short_description: Dashboard for Cetacea
 CetaScope est une application web full-stack qui permet d'explorer **des millions d'observations de cétacés** à travers une interface conversationnelle en français. Pose une question, obtiens une carte, un graphique ou une fiche espèce — sans ligne de code.
 
 Les données sont synchronisées automatiquement depuis OBIS, GBIF et l'IUCN via des pipelines GitHub Actions, et enrichies par Gemini AI (morphologie, biologie).
-
-![Aperçu de la page d'accueil](docs/screenshots/home.png)
-
 ---
 
 ## Fonctionnalités
@@ -41,8 +38,6 @@ Les données sont synchronisées automatiquement depuis OBIS, GBIF et l'IUCN via
 - **Cache intelligent** — données en localStorage, images Wikipedia mises en cache, chargement instantané
 - **Pipeline automatisé** — synchronisation hebdomadaire/mensuelle via GitHub Actions
 - **90 espèces couvertes** — de la baleine bleue au marsouin commun
-
-![Page profil d'espèce](docs/screenshots/profile.png)
 
 ---
 
@@ -164,8 +159,6 @@ uv run python fetch_observations.py
 | `GET` | `/health` | État de l'API |
 
 Le chatbot retourne toujours un objet `{ type, data, message }` permettant au frontend de choisir la visualisation adaptée.
-
-![Carte d'observations](docs/screenshots/map.png)
 
 ---
 
